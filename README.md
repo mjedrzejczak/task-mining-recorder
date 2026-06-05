@@ -12,6 +12,14 @@ A local Chrome/Edge extension (Manifest V3) that **records real browser activity
 4. Pin the extension and click its icon → **Start recording**.
 5. Click **Open live view**, then browse normally in any tab — events stream in real time.
 
+## What the live view shows (all computed from real capture)
+
+The viewer has three tabs, every figure derived from your actual captured events — nothing mocked:
+
+- **Live stream** — real-time events with their app, detected case IDs, and masked PII.
+- **Privacy & GDPR scan** — a per-application verdict computed from the PII actually found and masked.
+- **Case IDs & objects** — detected case IDs by app, mapped to the business objects they represent.
+
 ## What it captures
 
 - **Clicks, form inputs, and navigations** across any website (UI metadata + element labels).

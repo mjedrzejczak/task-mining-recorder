@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Task Mining — Live Capture</title>
+  <title>Task Mining — Live Capture &amp; Scan</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="viewer.css">
 </head>
@@ -13,21 +13,21 @@
       <div class="brand">
         <svg class="logo" viewBox="0 0 22 22" fill="none"><path d="M11 1.2 19.5 6v10L11 20.8 2.5 16V6L11 1.2Z" fill="#264AFF"/><circle cx="11" cy="11" r="2.4" fill="#2AA87A"/></svg>
         <div>
-          <h1>Live capture &amp; validation</h1>
-          <div class="sub">Real browser activity, captured locally · PII masked on-device before it appears here</div>
+          <h1>Live capture &amp; scan</h1>
+          <div class="sub">Every number below is computed from your real captured events — nothing is mocked</div>
         </div>
       </div>
     </div>
 
     <div class="callout">
       <span>●</span>
-      <div>This is a local demo. Captured events stay in your browser (<span class="mono">chrome.storage.local</span>). Raw PII never leaves the page — it's masked at the source. Native desktop apps aren't visible to the extension.</div>
+      <div>Local demo. Events stay in your browser (<span class="mono">chrome.storage.local</span>). Raw PII is masked at the source and never stored. Detection is pattern-based (v0): emails, IBANs, cards, phones, and labeled case IDs.</div>
     </div>
 
     <div class="capture-bar">
       <span class="rec-dot" id="recDot"></span>
       <strong id="recState">Not recording</strong>
-      <span class="sub" id="recMeta" style="color:var(--text2);font-size:13px;"></span>
+      <span id="recMeta" style="color:var(--text2);font-size:13px;"></span>
       <div class="spacer"></div>
       <button class="btn btn-primary" id="toggle">Start recording</button>
       <button class="btn btn-secondary" id="clear">Clear</button>
@@ -40,31 +40,60 @@
       <div class="card"><div class="kpi" id="kIds" style="color:var(--success)">0</div><div class="kpi-label">Case IDs identified</div></div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Live event stream</h2>
-        <div class="csub">UI metadata &amp; DOM elements — newest first</div>
-        <div class="stream" id="stream"><div class="empty">No events yet. Click <strong>Start recording</strong>, then browse in any tab.</div></div>
-      </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="stream">Live stream</button>
+      <button class="tab" data-tab="privacy">Privacy &amp; GDPR scan</button>
+      <button class="tab" data-tab="coverage">Case IDs &amp; objects</button>
+    </div>
 
-      <div>
+    <!-- Tab 1: Live stream -->
+    <section class="panel active" id="panel-stream">
+      <div class="grid">
+        <div class="card">
+          <h2>Live event stream</h2>
+          <div class="csub">UI metadata &amp; DOM elements — newest first</div>
+          <div class="stream" id="stream"><div class="empty">No events yet. Click <strong>Start recording</strong>, then browse in any tab.</div></div>
+        </div>
         <div class="card">
           <h2>Detected applications</h2>
-          <div class="csub">Which apps the activity came from</div>
+          <div class="csub">Where the activity came from</div>
           <div id="apps"><div class="empty">—</div></div>
         </div>
-        <div class="card sec-gap">
-          <h2>Case IDs &amp; objects</h2>
-          <div class="csub">Identified IDs and the app they were found in</div>
-          <div id="ids"><div class="empty">—</div></div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Privacy & GDPR scan -->
+    <section class="panel" id="panel-privacy">
+      <div class="card">
+        <h2>Per-application privacy verdict</h2>
+        <div class="csub">Computed from the PII actually detected and masked in this session</div>
+        <table class="tbl" id="privacyTbl">
+          <thead><tr><th>Application</th><th>PII categories found</th><th>Masking</th><th>Verdict</th></tr></thead>
+          <tbody><tr><td colspan="4"><div class="empty">No apps scanned yet.</div></td></tr></tbody>
+        </table>
+        <div class="note">⚠ v0 detection is pattern-based — it finds emails, IBANs, card-like numbers and phones. Names and free-text PII are <strong>not</strong> auto-detected yet, so a "no PII" verdict is not a compliance guarantee.</div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Case IDs & objects -->
+    <section class="panel" id="panel-coverage">
+      <div class="grid">
+        <div class="card">
+          <h2>Detected case IDs</h2>
+          <div class="csub">Which IDs were identified, and in which application</div>
+          <table class="tbl" id="idsTbl">
+            <thead><tr><th>Type</th><th>Value</th><th>Found in</th></tr></thead>
+            <tbody><tr><td colspan="3"><div class="empty">No case IDs detected yet — open a record with an ID (INV…, ORD-…, INC…).</div></td></tr></tbody>
+          </table>
         </div>
-        <div class="card sec-gap">
-          <h2>Privacy scan</h2>
-          <div class="csub">PII categories masked on-device</div>
-          <div id="pii"><div class="empty">—</div></div>
+        <div class="card">
+          <h2>Object coverage</h2>
+          <div class="csub">Business objects derived from the IDs found</div>
+          <div id="objects"><div class="empty">—</div></div>
+          <div class="note">Enrichment (image OCR, extra UI elements via XPath, or Process Mining) would resolve more IDs into objects — see the storyboard prototype.</div>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
   <script src="viewer.js"></script>
