@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Celonis Task Mining — Recorder (demo)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local demo: record real browser activity, mask PII on-device, detect case IDs, and stream it live for data-quality & privacy validation.",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["<all_urls>"],
@@ -15,7 +15,7 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle",
-      "all_frames": false
+      "all_frames": true
     }
   ]
 }

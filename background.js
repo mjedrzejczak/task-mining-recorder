@@ -2,7 +2,7 @@
 // State lives in chrome.storage.local so it survives SW restarts and the
 // live viewer can subscribe via storage.onChanged.
 
-const MAX_EVENTS = 600;
+const MAX_EVENTS = 1000;
 
 async function init() {
   const cur = await chrome.storage.local.get(["tm_recording", "tm_events"]);

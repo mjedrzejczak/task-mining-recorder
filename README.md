@@ -22,7 +22,7 @@ The viewer has three tabs, every figure derived from your actual captured events
 
 ## What it captures
 
-- **Clicks, form inputs, and navigations** across any website (UI metadata + element labels).
+- **Full page & email content** — subject, from/to, email body (Outlook & Gmail, including iframe sandboxes), main reading pane, editors, textareas, and table cells. Everything captured; only PII is masked.
 - **Visible page content** — the text you actually read (e.g. an email body), captured on load and when content changes (SPA panels, opening a message). PII is masked first; the full character count is shown.
 - **App detection** by domain (ServiceNow, Salesforce, Microsoft 365, SAP web, Jira, …).
 - **PII masking on-device**: emails, IBANs, card-like numbers, phone numbers are masked *before* any event is stored or shown.
