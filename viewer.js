@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const KIND_LABEL = { click: "Click", input: "Input", nav: "Nav" };
+const KIND_LABEL = { click: "Click", input: "Input", nav: "Nav", content: "Content" };
 
 // Maps a detected case-ID type to the business object it represents.
 const OBJECT_MAP = {
@@ -72,9 +72,11 @@ function render(events, rec) {
   $("stream").innerHTML = recent.length ? recent.map((e) => {
     const piiB = (e.pii || []).map((p) => `<span class="badge b-danger">masked: ${esc(p)}</span>`).join(" ");
     const idB = (e.caseIds || []).map((c) => `<span class="badge b-success">${esc(c.type)}: ${esc(c.value)}</span>`).join(" ");
+    const lenB = (e.kind === "content" && e.fullLen) ? `<span class="badge b-neutral">${e.fullLen.toLocaleString()} chars</span>` : "";
+    const txtClass = e.kind === "content" ? "txt content" : "txt";
     return `<div class="ev"><span class="t">${timeStr(e.ts)}</span><span class="k">${esc(KIND_LABEL[e.kind] || e.kind)}</span>
-      <div class="body"><div class="txt">${esc(e.text) || "<span style='color:var(--text3)'>(no text)</span>"}</div>
-      <div class="meta">${chip(e.app)} ${idB} ${piiB}</div></div></div>`;
+      <div class="body"><div class="${txtClass}">${esc(e.text) || "<span style='color:var(--text3)'>(no text)</span>"}</div>
+      <div class="meta">${chip(e.app)} ${idB} ${piiB} ${lenB}</div></div></div>`;
   }).join("") : `<div class="empty">No events yet. Click <strong>Start recording</strong>, then browse in any tab.</div>`;
 
   const appRows = [...apps.values()].sort((a, b) => b.count - a.count);
