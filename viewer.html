@@ -71,7 +71,7 @@
           <thead><tr><th>Application</th><th>PII categories found</th><th>Masking</th><th>Verdict</th></tr></thead>
           <tbody><tr><td colspan="4"><div class="empty">No apps scanned yet.</div></td></tr></tbody>
         </table>
-        <div class="note">⚠ v0 detection is pattern-based — it finds emails, IBANs, card-like numbers and phones. Names and free-text PII are <strong>not</strong> auto-detected yet, so a "no PII" verdict is not a compliance guarantee.</div>
+        <div class="note">PII is fully redacted in captured text — you only see <span class="mono">▮▮▮ [type extracted]</span> tokens. Detection is pattern-based (v0); unknown PII types may still appear.</div>
       </div>
     </section>
 
@@ -82,8 +82,8 @@
           <h2>Detected case IDs</h2>
           <div class="csub">Which IDs were identified, and in which application</div>
           <table class="tbl" id="idsTbl">
-            <thead><tr><th>Type</th><th>Value</th><th>Found in</th></tr></thead>
-            <tbody><tr><td colspan="3"><div class="empty">No case IDs detected yet — open a record with an ID (INV…, ORD-…, INC…).</div></td></tr></tbody>
+            <thead><tr><th>Case ID type</th><th>Value</th><th>Business object</th><th>Found in</th><th>Source</th></tr></thead>
+            <tbody><tr><td colspan="5"><div class="empty">No case IDs detected yet — open a record with an ID (INV…, ORD-…, INC…, PO-…).</div></td></tr></tbody>
           </table>
         </div>
         <div class="card">
@@ -96,6 +96,7 @@
     </section>
   </div>
 
+  <script src="scan-lib.js"></script>
   <script src="viewer.js"></script>
 </body>
 </html>

@@ -1,16 +1,6 @@
 const $ = (id) => document.getElementById(id);
 const KIND_LABEL = { click: "Click", input: "Input", nav: "Nav", content: "Content" };
 
-// Maps a detected case-ID type to the business object it represents.
-const OBJECT_MAP = {
-  "Incident": "Service Ticket",
-  "Case": "Service Ticket",
-  "Sales order": "Sales Order",
-  "Purchase order": "Purchase Order",
-  "Invoice": "Invoice",
-  "Invoice (SAP)": "Invoice"
-};
-
 function esc(s) {
   return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -24,6 +14,23 @@ function chip(app) {
   return `<span class="chip">${glyph(app)}${esc(app.name)}</span>`;
 }
 
+/** Highlight redaction tokens in already-escaped text */
+function formatContent(escaped) {
+  return escaped.replace(/▮▮▮ \[([^\]]+) extracted\]/g,
+    '<span class="pii-token">▮▮▮ [$1 extracted]</span>');
+}
+
+function piiBadges(e) {
+  if (e.piiCounts && typeof e.piiCounts === "object") {
+    return Object.entries(e.piiCounts)
+      .map(([label, n]) => `<span class="badge b-danger">${esc(label)} × ${n}</span>`).join(" ");
+  }
+  const counts = {};
+  (e.pii || []).forEach((p) => { counts[p] = (counts[p] || 0) + 1; });
+  return Object.entries(counts)
+    .map(([label, n]) => `<span class="badge b-danger">${esc(label)} × ${n}</span>`).join(" ");
+}
+
 function renderState(rec, n) {
   $("recDot").classList.toggle("on", !!rec);
   $("recState").textContent = rec ? "Recording…" : "Not recording";
@@ -33,26 +40,64 @@ function renderState(rec, n) {
   t.className = rec ? "btn btn-stop" : "btn btn-primary";
 }
 
+/** Collect every case ID from events + re-scan text for anything missed */
+function collectCaseIds(events) {
+  const idMap = new Map();
+
+  function add(c, app, source) {
+    const value = String(c.value || "").trim();
+    if (!value) return;
+    const type = c.type || "Unknown";
+    const object = c.object || (typeof TMScan !== "undefined" ? TMScan.objectFor(type) : type);
+    const k = type + "|" + value.toUpperCase();
+    if (!idMap.has(k)) {
+      idMap.set(k, { type, value, object, app, sources: new Set() });
+    }
+    idMap.get(k).sources.add(source);
+  }
+
+  for (const e of events) {
+    (e.caseIds || []).forEach((c) => add(c, e.app, KIND_LABEL[e.kind] || e.kind));
+    if (typeof TMScan !== "undefined" && e.text) {
+      TMScan.extractCaseIds(e.text).forEach((c) => add(c, e.app, (KIND_LABEL[e.kind] || e.kind) + " (rescan)"));
+    }
+  }
+  return idMap;
+}
+
 function aggregate(events) {
-  const apps = new Map();   // name -> { info, count, pii:Map(label->n), piiTotal }
-  const idMap = new Map();  // type|value -> { type, value, app }
-  const objects = new Map();// object -> { count, types:Set }
+  const apps = new Map();
   let piiTotal = 0;
 
   for (const e of events) {
     let a = apps.get(e.app.name);
     if (!a) { a = { info: e.app, count: 0, pii: new Map(), piiTotal: 0 }; apps.set(e.app.name, a); }
     a.count++;
-    (e.pii || []).forEach((p) => { a.pii.set(p, (a.pii.get(p) || 0) + 1); a.piiTotal++; piiTotal++; });
-    (e.caseIds || []).forEach((c) => {
-      const k = c.type + "|" + c.value;
-      if (!idMap.has(k)) idMap.set(k, { type: c.type, value: c.value, app: e.app });
-      const obj = OBJECT_MAP[c.type] || c.type;
-      let o = objects.get(obj);
-      if (!o) { o = { count: 0, types: new Set() }; objects.set(obj, o); }
-      if (!idMap.has(k + "#counted")) { idMap.set(k + "#counted", true); o.count++; o.types.add(c.type); }
-    });
+    if (e.piiCounts) {
+      Object.entries(e.piiCounts).forEach(([label, n]) => {
+        a.pii.set(label, (a.pii.get(label) || 0) + n);
+        a.piiTotal += n;
+        piiTotal += n;
+      });
+    } else {
+      (e.pii || []).forEach((p) => {
+        a.pii.set(p, (a.pii.get(p) || 0) + 1);
+        a.piiTotal++;
+        piiTotal++;
+      });
+    }
   }
+
+  const idMap = collectCaseIds(events);
+  const objects = new Map();
+  for (const id of idMap.values()) {
+    let o = objects.get(id.object);
+    if (!o) { o = { count: 0, types: new Set(), ids: [] }; objects.set(id.object, o); }
+    o.count++;
+    o.types.add(id.type);
+    o.ids.push(id.value);
+  }
+
   return { apps, idMap, objects, piiTotal };
 }
 
@@ -60,25 +105,28 @@ function render(events, rec) {
   events = Array.isArray(events) ? events : [];
   renderState(rec, events.length);
   const { apps, idMap, objects, piiTotal } = aggregate(events);
-  const realIds = [...idMap.entries()].filter(([k]) => !k.endsWith("#counted")).map(([, v]) => v);
+  const allIds = [...idMap.values()];
 
   $("kEvents").textContent = events.length.toLocaleString();
   $("kApps").textContent = apps.size;
   $("kPii").textContent = piiTotal.toLocaleString();
-  $("kIds").textContent = realIds.length;
+  $("kIds").textContent = allIds.length;
 
-  // --- Tab 1: stream ---
   const recent = events.slice(-150).reverse();
   $("stream").innerHTML = recent.length ? recent.map((e) => {
-    const piiB = (e.pii || []).map((p) => `<span class="badge b-danger">masked: ${esc(p)}</span>`).join(" ");
-    const idB = (e.caseIds || []).map((c) => `<span class="badge b-success">${esc(c.type)}: ${esc(c.value)}</span>`).join(" ");
+    const idB = (e.caseIds || []).map((c) =>
+      `<span class="badge b-success">${esc(c.type)}: <span class="mono">${esc(c.value)}</span></span>`
+    ).join(" ");
     const lenB = (e.kind === "content" && e.fullLen) ? `<span class="badge b-neutral">${e.fullLen.toLocaleString()} chars</span>` : "";
     const regionB = e.region ? `<span class="badge b-accent">${esc(e.region)}</span>` : "";
     const frameB = e.frame ? `<span class="badge b-neutral">iframe</span>` : "";
+    const body = e.kind === "content"
+      ? formatContent(esc(e.text))
+      : esc(e.text);
     const txtClass = e.kind === "content" ? "txt content" : "txt";
     return `<div class="ev"><span class="t">${timeStr(e.ts)}</span><span class="k">${esc(KIND_LABEL[e.kind] || e.kind)}</span>
-      <div class="body"><div class="${txtClass}">${esc(e.text) || "<span style='color:var(--text3)'>(no text)</span>"}</div>
-      <div class="meta">${chip(e.app)} ${regionB} ${frameB} ${idB} ${piiB} ${lenB}</div></div></div>`;
+      <div class="body"><div class="${txtClass}">${body || "<span style='color:var(--text3)'>(no text)</span>"}</div>
+      <div class="meta">${chip(e.app)} ${regionB} ${frameB} ${idB} ${piiBadges(e)} ${lenB}</div></div></div>`;
   }).join("") : `<div class="empty">No events yet. Click <strong>Start recording</strong>, then browse in any tab.</div>`;
 
   const appRows = [...apps.values()].sort((a, b) => b.count - a.count);
@@ -86,30 +134,37 @@ function render(events, rec) {
     `<div class="list-row">${chip(a.info)}<span class="mono" style="color:var(--text2)">${a.count}</span></div>`
   ).join("") : `<div class="empty">—</div>`;
 
-  // --- Tab 2: privacy verdict per app ---
   const privBody = appRows.length ? appRows.map((a) => {
     const cats = [...a.pii.keys()];
-    const catHtml = cats.length ? cats.map((c) => `<span class="badge b-neutral">${esc(c)}</span>`).join(" ")
+    const catHtml = cats.length ? cats.map((c) => `<span class="badge b-neutral">${esc(c)} × ${a.pii.get(c)}</span>`).join(" ")
       : `<span style="color:var(--text3)">none detected</span>`;
     const verdict = a.piiTotal > 0
-      ? `<span class="badge b-success">● PII masked</span>`
+      ? `<span class="badge b-success">● Redacted</span>`
       : `<span class="badge b-neutral">No PII seen</span>`;
-    const mask = a.piiTotal > 0 ? `<span class="mono">${a.piiTotal}/${a.piiTotal} masked</span>` : `<span class="mono" style="color:var(--text3)">—</span>`;
+    const mask = a.piiTotal > 0 ? `<span class="mono">${a.piiTotal} extracted &amp; hidden</span>` : `<span class="mono" style="color:var(--text3)">—</span>`;
     return `<tr><td>${chip(a.info)}</td><td>${catHtml}</td><td>${mask}</td><td>${verdict}</td></tr>`;
   }).join("") : `<tr><td colspan="4"><div class="empty">No apps scanned yet.</div></td></tr>`;
   $("privacyTbl").querySelector("tbody").innerHTML = privBody;
 
-  // --- Tab 3: case IDs + objects ---
-  const idsBody = realIds.length ? realIds.map((c) =>
-    `<tr><td><span class="badge b-accent">${esc(c.type)}</span></td><td class="mono">${esc(c.value)}</td><td>${chip(c.app)}</td></tr>`
-  ).join("") : `<tr><td colspan="3"><div class="empty">No case IDs detected yet — open a record with an ID (INV…, ORD-…, INC…).</div></td></tr>`;
+  const idsBody = allIds.length ? allIds.map((c) =>
+    `<tr>
+      <td><span class="badge b-accent">${esc(c.type)}</span></td>
+      <td class="mono">${esc(c.value)}</td>
+      <td><span class="badge b-success">${esc(c.object)}</span></td>
+      <td>${chip(c.app)}</td>
+      <td class="hint">${esc([...c.sources].join(", "))}</td>
+    </tr>`
+  ).join("") : `<tr><td colspan="5"><div class="empty">No case IDs detected yet. Try opening an email or record that mentions INV…, ORD-…, PO-…, INC…, or labeled IDs like "Invoice: 450021987".</div></td></tr>`;
   $("idsTbl").querySelector("tbody").innerHTML = idsBody;
 
-  const objRows = [...objects.entries()];
+  const objRows = [...objects.entries()].sort((a, b) => b[1].count - a[1].count);
   $("objects").innerHTML = objRows.length ? objRows.map(([name, o]) =>
-    `<div class="cov-card"><div class="cov-name">${esc(name)} <span class="badge b-success">● Covered</span></div>
-     <div class="cov-meta">${o.count} ID${o.count === 1 ? "" : "s"} found · keyed by ${[...o.types].map(esc).join(", ")}</div></div>`
-  ).join("") : `<div class="empty">No objects yet — detected case IDs will map to objects here.</div>`;
+    `<div class="cov-card">
+      <div class="cov-name">${esc(name)} <span class="badge b-success">● ${o.count} ID${o.count === 1 ? "" : "s"}</span></div>
+      <div class="cov-meta">Types: ${[...o.types].map(esc).join(", ")}</div>
+      <div class="cov-meta mono" style="margin-top:4px;font-size:11px;">${o.ids.slice(0, 8).map(esc).join(" · ")}${o.ids.length > 8 ? " …" : ""}</div>
+    </div>`
+  ).join("") : `<div class="empty">No objects mapped yet — case IDs will appear here with their business object.</div>`;
 }
 
 function refresh() {

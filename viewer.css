@@ -40,6 +40,7 @@ body { margin:0; font-family: Inter, -apple-system, 'Segoe UI', sans-serif; back
 .ev .txt { color: var(--text); word-break: break-word; }
 .ev .k { width: 58px; }
 .ev .txt.content { white-space: pre-wrap; max-height: 420px; overflow: auto; background: var(--surface-hover); padding: 10px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.55; font-family: 'JetBrains Mono', monospace; }
+.pii-token { color: var(--danger); background: var(--danger-subtle); padding: 1px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
 .ev .meta { color: var(--text3); font-size:11px; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .chip { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 8px; border-radius:5px; background: var(--surface-hover); font-size:12px; font-weight:500; color: var(--text); }
 .glyph { width:15px; height:15px; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:8px; font-weight:700; }
