@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Mining — Live Capture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 22 22" fill="none"><path d="M11 1.2 19.5 6v10L11 20.8 2.5 16V6L11 1.2Z" fill="#264AFF"/><circle cx="11" cy="11" r="2.4" fill="#2AA87A"/></svg>
+        <div>
+          <h1>Live capture &amp; validation</h1>
+          <div class="sub">Real browser activity, captured locally · PII masked on-device before it appears here</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span>●</span>
+      <div>This is a local demo. Captured events stay in your browser (<span class="mono">chrome.storage.local</span>). Raw PII never leaves the page — it's masked at the source. Native desktop apps aren't visible to the extension.</div>
+    </div>
+
+    <div class="capture-bar">
+      <span class="rec-dot" id="recDot"></span>
+      <strong id="recState">Not recording</strong>
+      <span class="sub" id="recMeta" style="color:var(--text2);font-size:13px;"></span>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" id="toggle">Start recording</button>
+      <button class="btn btn-secondary" id="clear">Clear</button>
+    </div>
+
+    <div class="kpis">
+      <div class="card"><div class="kpi" id="kEvents">0</div><div class="kpi-label">UI events captured</div></div>
+      <div class="card"><div class="kpi" id="kApps">0</div><div class="kpi-label">Applications detected</div></div>
+      <div class="card"><div class="kpi" id="kPii" style="color:var(--danger)">0</div><div class="kpi-label">PII values masked</div></div>
+      <div class="card"><div class="kpi" id="kIds" style="color:var(--success)">0</div><div class="kpi-label">Case IDs identified</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Live event stream</h2>
+        <div class="csub">UI metadata &amp; DOM elements — newest first</div>
+        <div class="stream" id="stream"><div class="empty">No events yet. Click <strong>Start recording</strong>, then browse in any tab.</div></div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Detected applications</h2>
+          <div class="csub">Which apps the activity came from</div>
+          <div id="apps"><div class="empty">—</div></div>
+        </div>
+        <div class="card sec-gap">
+          <h2>Case IDs &amp; objects</h2>
+          <div class="csub">Identified IDs and the app they were found in</div>
+          <div id="ids"><div class="empty">—</div></div>
+        </div>
+        <div class="card sec-gap">
+          <h2>Privacy scan</h2>
+          <div class="csub">PII categories masked on-device</div>
+          <div id="pii"><div class="empty">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

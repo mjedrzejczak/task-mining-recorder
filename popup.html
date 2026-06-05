@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --accent:#264AFF; --accent-hover:#1A3AE0; --danger:#D93025; --success:#2AA87A;
+      --text:#1A1625; --text2:#6B6880; --border:#E2E0EA; --bg:#fff; --hover:#F1F0F5;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Inter, -apple-system, 'Segoe UI', sans-serif; width: 280px; margin: 0; padding: 16px; color: var(--text); }
+    .title { font-size: 14px; font-weight: 600; display:flex; align-items:center; gap:8px; }
+    .logo { width:18px; height:18px; }
+    .sub { font-size: 12px; color: var(--text2); margin: 2px 0 14px; }
+    .status { display:flex; align-items:center; gap:8px; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:12px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:var(--text2); }
+    .dot.rec { background: var(--danger); animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .count { margin-left:auto; font-weight:600; font-variant-numeric: tabular-nums; }
+    button { width:100%; height:36px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; border:none; margin-bottom:8px; }
+    .primary { background: var(--accent); color:#fff; }
+    .primary:hover { background: var(--accent-hover); }
+    .stop { background: var(--danger); color:#fff; }
+    .secondary { background:#fff; color:var(--text); border:1px solid #C8C5D6; }
+    .secondary:hover { background: var(--hover); }
+    .ghost { background:none; color:var(--text2); height:28px; font-weight:500; }
+    .hint { font-size:11px; color:#9E9BAE; text-align:center; margin-top:6px; line-height:1.4; }
+  </style>
+</head>
+<body>
+  <div class="title">
+    <svg class="logo" viewBox="0 0 22 22" fill="none"><path d="M11 1.2 19.5 6v10L11 20.8 2.5 16V6L11 1.2Z" fill="#264AFF"/><circle cx="11" cy="11" r="2.4" fill="#2AA87A"/></svg>
+    Task Mining Recorder
+  </div>
+  <div class="sub">Records this browser locally · PII masked on-device</div>
+
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="stateLabel">Not recording</span>
+    <span class="count" id="count">0</span>
+  </div>
+
+  <button class="primary" id="toggle">Start recording</button>
+  <button class="secondary" id="viewer">Open live view</button>
+  <button class="ghost" id="clear">Clear events</button>
+  <div class="hint">Browse normally in any tab. Native desktop apps (SAP GUI, Excel) need the client.</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
